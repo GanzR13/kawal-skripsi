@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
-import { KanbanSquare, GripVertical, CircleDashed, Timer, CheckCircle2, Plus, Edit2, Trash2, X } from 'lucide-vue-next'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { KanbanSquare, GripVertical, CircleDashed, Timer, CheckCircle2, Plus, Edit2, Trash2, X, Gift } from 'lucide-vue-next'
 
-// Definisi Kolom Kanban (Ditambahkan styling Dark Mode)
 const kolom = [
   { id: 'todo', judul: 'Belum Mulai', ikon: CircleDashed, warnaHeader: 'bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300', warnaBorder: 'border-slate-200 dark:border-slate-700' },
   { id: 'progress', judul: 'Sedang Dikerjakan', ikon: Timer, warnaHeader: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400', warnaBorder: 'border-amber-200 dark:border-amber-500/30' },
@@ -10,32 +9,47 @@ const kolom = [
 ]
 
 const tugas = ref([])
-
-// State Modal CRUD
 const isModalBuka = ref(false)
 const isEditing = ref(false)
-const formTugas = ref({ id: null, judul: '', deskripsi: '', status: 'todo' })
+// Tambahkan 'reward' di state form
+const formTugas = ref({ id: null, judul: '', deskripsi: '', status: 'todo', reward: '' })
 
-onMounted(() => {
+let isUpdatingFromStorage = false 
+
+const muatDataKanban = () => {
   const dataLokal = localStorage.getItem('kawalSkripsi_kanban')
   if (dataLokal) {
+    isUpdatingFromStorage = true 
     tugas.value = JSON.parse(dataLokal)
+    setTimeout(() => { isUpdatingFromStorage = false }, 100)
   } else {
+    // Dummy Data yang sudah disisipkan Reward!
     tugas.value = [
-      { id: 1, judul: 'Bab 1: Pendahuluan', deskripsi: 'Latar belakang dan rumusan masalah.', status: 'done' },
-      { id: 2, judul: 'Bab 2: Tinjauan Pustaka', deskripsi: 'Mencari referensi jurnal 5 tahun terakhir.', status: 'progress' },
-      { id: 3, judul: 'Bab 3: Metodologi', deskripsi: 'Menentukan metode penelitian dan alur sistem.', status: 'todo' },
-      { id: 4, judul: 'Bab 4: Implementasi & Pengujian', deskripsi: 'Coding aplikasi dan uji coba pengguna.', status: 'todo' },
-      { id: 5, judul: 'Bab 5: Kesimpulan', deskripsi: 'Menarik kesimpulan dari hasil pengujian.', status: 'todo' }
+      { id: 1, judul: 'Bab 1: Pendahuluan', deskripsi: 'Latar belakang dan rumusan masalah.', status: 'done', reward: 'Nonton Netflix 1 Film' },
+      { id: 2, judul: 'Bab 2: Tinjauan Pustaka', deskripsi: 'Mencari referensi jurnal 5 tahun terakhir.', status: 'progress', reward: 'Beli Kopi Susu Gula Aren' },
+      { id: 3, judul: 'Bab 3: Metodologi', deskripsi: 'Menentukan metode penelitian dan alur sistem.', status: 'todo', reward: 'Makan All You Can Eat' },
+      { id: 4, judul: 'Bab 4: Implementasi & Pengujian', deskripsi: 'Coding aplikasi dan uji coba pengguna.', status: 'todo', reward: 'Beli Skin Game' },
+      { id: 5, judul: 'Bab 5: Kesimpulan', deskripsi: 'Menarik kesimpulan dari hasil pengujian.', status: 'todo', reward: 'Jalan-jalan ke Mall Bebas Beban' }
     ]
   }
+}
+
+onMounted(() => {
+  muatDataKanban()
+  window.addEventListener('kawalSkripsi_update', muatDataKanban)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('kawalSkripsi_update', muatDataKanban)
 })
 
 watch(tugas, (nilaiBaru) => {
-  localStorage.setItem('kawalSkripsi_kanban', JSON.stringify(nilaiBaru))
+  if (!isUpdatingFromStorage) {
+    localStorage.setItem('kawalSkripsi_kanban', JSON.stringify(nilaiBaru))
+    window.dispatchEvent(new CustomEvent('kawalSkripsi_update'))
+  }
 }, { deep: true })
 
-// Logika Drag and Drop Native
 const startDrag = (event, item) => {
   event.dataTransfer.dropEffect = 'move'
   event.dataTransfer.effectAllowed = 'move'
@@ -50,33 +64,32 @@ const onDrop = (event, statusBaru) => {
   }
 }
 
-// Logika CRUD
 const bukaModalTambah = (statusAwal = 'todo') => {
   isEditing.value = false
-  formTugas.value = { id: null, judul: '', deskripsi: '', status: statusAwal }
+  formTugas.value = { id: null, judul: '', deskripsi: '', status: statusAwal, reward: '' }
   isModalBuka.value = true
 }
 
 const bukaModalEdit = (item) => {
   isEditing.value = true
-  formTugas.value = { ...item } // Clone data agar tidak reaktif sebelum disave
+  formTugas.value = { ...item } 
+  // Handle jika ada data lama yang belum punya field reward
+  if (formTugas.value.reward === undefined) formTugas.value.reward = ''
   isModalBuka.value = true
 }
 
 const simpanTugas = () => {
   if (!formTugas.value.judul.trim()) return
-
   if (isEditing.value) {
-    // Update data
     const index = tugas.value.findIndex(t => t.id === formTugas.value.id)
     if (index !== -1) tugas.value[index] = { ...formTugas.value }
   } else {
-    // Tambah data baru
-    tugas.value.push({
-      id: Date.now(),
-      judul: formTugas.value.judul,
-      deskripsi: formTugas.value.deskripsi,
-      status: formTugas.value.status
+    tugas.value.push({ 
+      id: Date.now(), 
+      judul: formTugas.value.judul, 
+      deskripsi: formTugas.value.deskripsi, 
+      status: formTugas.value.status,
+      reward: formTugas.value.reward 
     })
   }
   isModalBuka.value = false
@@ -91,39 +104,24 @@ const hapusTugas = (id) => {
 
 <template>
   <div class="space-y-8 h-full flex flex-col relative">
-    
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-300">
       <div>
         <h1 class="text-3xl font-bold text-slate-800 dark:text-white flex items-center">
           <KanbanSquare class="mr-3 text-emerald-500 w-8 h-8" />
           Papan Progres Skripsi
         </h1>
-        <p class="text-slate-500 dark:text-slate-400 mt-2">Geser (drag and drop) atau kelola kartu bab skripsimu.</p>
+        <p class="text-slate-500 dark:text-slate-400 mt-2">Geser (drag and drop) kartu atau tambahkan target dan hadiahmu!</p>
       </div>
-      
-      <button 
-        @click="bukaModalTambah('todo')"
-        class="flex items-center px-5 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-all shadow-sm"
-      >
-        <Plus class="w-5 h-5 mr-2" />
-        Tambah Tugas
+      <button @click="bukaModalTambah('todo')" class="flex items-center px-5 py-2.5 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 transition-all shadow-sm">
+        <Plus class="w-5 h-5 mr-2" /> Tambah Tugas
       </button>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 items-start">
-      <div 
-        v-for="kol in kolom" 
-        :key="kol.id"
-        class="bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border flex flex-col overflow-hidden h-full min-h-75 transition-colors duration-300"
-        :class="kol.warnaBorder"
-        @drop="onDrop($event, kol.id)"
-        @dragover.prevent
-        @dragenter.prevent
-      >
+      <div v-for="kol in kolom" :key="kol.id" class="bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border flex flex-col overflow-hidden h-full min-h-75 transition-colors duration-300" :class="kol.warnaBorder" @drop="onDrop($event, kol.id)" @dragover.prevent @dragenter.prevent>
         <div class="p-4 border-b flex items-center justify-between transition-colors duration-300" :class="[kol.warnaHeader, kol.warnaBorder]">
           <div class="flex items-center font-bold">
-            <component :is="kol.ikon" class="w-5 h-5 mr-2" />
-            {{ kol.judul }}
+            <component :is="kol.ikon" class="w-5 h-5 mr-2" /> {{ kol.judul }}
           </div>
           <div class="flex items-center gap-2">
             <button @click="bukaModalTambah(kol.id)" class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
@@ -137,34 +135,24 @@ const hapusTugas = (id) => {
 
         <div class="p-4 flex-1 space-y-4 overflow-y-auto">
           <template v-for="item in tugas" :key="item.id">
-            <div 
-              v-if="item.status === kol.id"
-              draggable="true"
-              @dragstart="startDrag($event, item)"
-              class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500 transition-all cursor-grab active:cursor-grabbing group relative"
-            >
+            <div v-if="item.status === kol.id" draggable="true" @dragstart="startDrag($event, item)" class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-500 transition-all cursor-grab active:cursor-grabbing group relative flex flex-col">
               <div class="absolute right-3 top-4 text-slate-300 dark:text-slate-600 group-hover:text-emerald-400 transition-colors">
                 <GripVertical class="w-5 h-5" />
               </div>
-              
               <h3 class="font-bold text-slate-800 dark:text-white pr-6 transition-colors">{{ item.judul }}</h3>
-              <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2 transition-colors">{{ item.deskripsi }}</p>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-3 line-clamp-2 transition-colors flex-1">{{ item.deskripsi }}</p>
               
+              <div v-if="item.reward && item.reward.trim() !== ''" class="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-100 dark:border-rose-500/20 w-fit">
+                <Gift class="w-3.5 h-3.5 mr-1.5" /> {{ item.reward }}
+              </div>
+
               <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                <button @click="bukaModalEdit(item)" class="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors" title="Edit">
-                  <Edit2 class="w-4 h-4" />
-                </button>
-                <button @click="hapusTugas(item.id)" class="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Hapus">
-                  <Trash2 class="w-4 h-4" />
-                </button>
+                <button @click="bukaModalEdit(item)" class="p-1.5 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors" title="Edit"><Edit2 class="w-4 h-4" /></button>
+                <button @click="hapusTugas(item.id)" class="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Hapus"><Trash2 class="w-4 h-4" /></button>
               </div>
             </div>
           </template>
-
-          <div 
-            v-if="tugas.filter(t => t.status === kol.id).length === 0" 
-            class="h-24 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm font-medium transition-colors"
-          >
+          <div v-if="tugas.filter(t => t.status === kol.id).length === 0" class="h-24 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm font-medium transition-colors">
             Tarik ke sini
           </div>
         </div>
@@ -174,26 +162,26 @@ const hapusTugas = (id) => {
     <transition name="fade">
       <div v-if="isModalBuka" class="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="isModalBuka = false"></div>
-        
         <div class="bg-white dark:bg-slate-800 w-full max-w-md p-6 rounded-2xl shadow-xl relative z-10 transition-colors duration-300 animate-in zoom-in-95">
           <div class="flex justify-between items-center mb-5">
             <h2 class="text-xl font-bold text-slate-800 dark:text-white">{{ isEditing ? 'Edit Tugas' : 'Tambah Tugas Baru' }}</h2>
-            <button @click="isModalBuka = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-              <X class="w-5 h-5" />
-            </button>
+            <button @click="isModalBuka = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><X class="w-5 h-5" /></button>
           </div>
-          
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Judul Tugas</label>
               <input v-model="formTugas.judul" type="text" placeholder="misal: Revisi Bab 1" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors" />
             </div>
-            
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Deskripsi / Catatan</label>
               <textarea v-model="formTugas.deskripsi" rows="3" placeholder="Detail tugas..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none transition-colors"></textarea>
             </div>
             
+            <div>
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center"><Gift class="w-4 h-4 mr-1 text-rose-500"/> Hadiah / Self Reward (Opsional)</label>
+              <input v-model="formTugas.reward" type="text" placeholder="misal: Beli Matcha Latte" class="w-full px-4 py-2.5 bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/50 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-rose-400 outline-none transition-colors" />
+            </div>
+
             <div>
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status Progres</label>
               <select v-model="formTugas.status" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors">
@@ -202,30 +190,18 @@ const hapusTugas = (id) => {
                 <option value="done">Selesai</option>
               </select>
             </div>
-            
             <div class="flex justify-end gap-3 mt-6 pt-2 border-t border-slate-100 dark:border-slate-700">
-              <button @click="isModalBuka = false" class="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                Batal
-              </button>
-              <button @click="simpanTugas" :disabled="!formTugas.judul" class="px-6 py-2 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all">
-                Simpan
-              </button>
+              <button @click="isModalBuka = false" class="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Batal</button>
+              <button @click="simpanTugas" :disabled="!formTugas.judul" class="px-6 py-2 bg-emerald-500 text-white font-medium rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-all">Simpan</button>
             </div>
           </div>
         </div>
       </div>
     </transition>
-
   </div>
 </template>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
