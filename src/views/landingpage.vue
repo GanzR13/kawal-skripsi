@@ -209,12 +209,11 @@ const scrollToFeatures = () => {
 </template>
 
 <style scoped>
-/* Perspektif untuk efek Mockup */
+
 .perspective-1000 {
   perspective: 1000px;
 }
 
-/* Animasi Muncul dari Bawah Halus */
 @keyframes fadeInUp {
   0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -229,7 +228,7 @@ const scrollToFeatures = () => {
 .animation-delay-300 { animation-delay: 300ms; }
 .animation-delay-400 { animation-delay: 400ms; }
 
-/* Background Glow Bernapas */
+
 @keyframes pulseSlow {
   0%, 100% { opacity: 0.4; transform: scale(1); }
   50% { opacity: 0.7; transform: scale(1.05); }
