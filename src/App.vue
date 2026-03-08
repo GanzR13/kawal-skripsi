@@ -3,9 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, Sun, Moon, GraduationCap, Sparkles } from 'lucide-vue-next'
 import Sidebar from '@/components/Sidebar.vue'
-
-
-import LandingPage from '@/views/landingpage.vue' 
+import LandingPage from '@/views/LandingPage.vue'
 
 
 import { isDark, initTheme, toggleTheme } from '@/composables/useTheme.js'
@@ -61,7 +59,7 @@ const masukKeDashboard = () => {
   <div class="relative w-full h-full">
 
     <transition name="fade">
-      <div v-if="isShowLoading" class="fixed inset-0 z-[9999] flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+      <div v-if="isShowLoading" class="fixed inset-0 z-9999 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
         
         <div class="bg-slate-900 border border-slate-700/50 p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm w-full relative overflow-hidden">
           
@@ -80,7 +78,7 @@ const masukKeDashboard = () => {
           </p>
 
           <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden z-10">
-            <div class="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-300 ease-out" :style="{ width: progressLoading + '%' }"></div>
+            <div class="h-full bg-linear-to-r from-emerald-500 to-cyan-400 rounded-full transition-all duration-300 ease-out" :style="{ width: progressLoading + '%' }"></div>
           </div>
           
           <div class="mt-3 text-xs font-bold text-emerald-400 z-10 font-mono">
@@ -109,7 +107,7 @@ const masukKeDashboard = () => {
         <main class="flex-1 h-screen overflow-y-auto w-full relative">
           <header class="md:hidden bg-white dark:bg-slate-800 shadow-sm h-16 flex items-center justify-between px-4 sticky top-0 z-30 transition-colors duration-300">
             <div class="flex items-center">
-              <img src="/logo.png" alt="Logo" class="w-8 h-8 mr-2 object-contain" />
+              <img src="/logo.png" alt="Logo" class="w-10 h-10 mr-2 object-contain" />
               <h1 class="text-lg font-bold text-slate-800 dark:text-white">Kawal<span class="text-emerald-500">Skripsi</span></h1>
             </div>
 

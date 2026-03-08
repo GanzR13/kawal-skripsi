@@ -121,9 +121,11 @@ const levelSaatIni = computed(() => Math.floor(totalEXP.value / 200) + 1)
 const expProgress = computed(() => totalEXP.value - ((levelSaatIni.value - 1) * 200))
 const persentaseLevel = computed(() => Math.round((expProgress.value / 200) * 100))
 
+const totalRevisi = computed(() => {
+  return dataCatatan.value.filter(c => c.tipe === 'revisi').length
+})
 
 const selfRewards = computed(() => {
-
   const fromCatatan = dataCatatan.value
     .filter(c => c.tipe === 'revisi' && c.reward && c.reward.trim() !== '')
     .map(c => {
@@ -138,7 +140,6 @@ const selfRewards = computed(() => {
         warna: 'text-rose-500 bg-rose-100 dark:bg-rose-500/20'
       }
     })
-
 
   const fromKanban = dataKanban.value
     .filter(t => t.reward && t.reward.trim() !== '' && !t.judul.startsWith('[Revisi]'))
@@ -177,15 +178,17 @@ const selfRewards = computed(() => {
           <Brain class="w-6 h-6" />
         </div>
       </div>
+      
       <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between hover:-translate-y-1 transition-all duration-300">
         <div>
           <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Catatan Revisi</p>
-          <h3 class="text-3xl font-bold text-slate-800 dark:text-white">{{ dataCatatan.length }}</h3>
+          <h3 class="text-3xl font-bold text-slate-800 dark:text-white">{{ totalRevisi }}</h3>
         </div>
         <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-500 dark:text-amber-400 flex items-center justify-center">
           <BookOpenCheck class="w-6 h-6" />
         </div>
       </div>
+      
       <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between hover:-translate-y-1 transition-all duration-300">
         <div>
           <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Pusat Referensi</p>
@@ -195,6 +198,7 @@ const selfRewards = computed(() => {
           <LibraryBig class="w-6 h-6" />
         </div>
       </div>
+      
       <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between hover:-translate-y-1 transition-all duration-300">
         <div>
           <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Tugas Tuntas</p>
@@ -225,7 +229,8 @@ const selfRewards = computed(() => {
             <span class="text-emerald-400 animate-pulse">Progres ke Level {{ levelSaatIni + 1 }}</span>
             <span class="text-slate-300">{{ expProgress }} / 200 EXP</span>
           </div>
-          <div class="w-full h-4 bg-slate-800 rounded-full overflow-hidden shadow-inner relative">
+          <!-- Perbaikan visibilitas background progress bar di darkmode -->
+          <div class="w-full h-4 bg-slate-800 dark:bg-slate-900/60 rounded-full overflow-hidden shadow-inner relative">
             <div class="h-full bg-linear-to-r from-emerald-400 to-emerald-600 transition-all duration-1000 ease-out absolute left-0 top-0" :style="{ width: `${persentaseLevel}%` }"></div>
           </div>
           <p class="text-xs text-slate-400 text-right mt-2">EXP diraih dari Sesi Fokus, Tugas Kanban, dan Bimbingan Selesai!</p>
@@ -251,8 +256,9 @@ const selfRewards = computed(() => {
             <h3 class="font-bold text-sm text-slate-800 dark:text-white mb-1">{{ reward.nama }}</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{{ reward.deskripsi }}</p>
             
+            <!-- Perbaikan overlay text support darkmode -->
             <div v-if="!reward.terbuka" class="absolute inset-0 flex items-center justify-center bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-[1px]">
-              <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white/50 dark:bg-black/50 px-2 py-1 rounded text-center leading-tight">Selesaikan<br>Tugasnya!</span>
+              <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest bg-white/70 dark:bg-slate-800/90 px-2 py-1 rounded text-center leading-tight border border-slate-200 dark:border-slate-700 shadow-sm">Selesaikan<br>Tugasnya!</span>
             </div>
           </div>
         </div>
@@ -272,6 +278,7 @@ const selfRewards = computed(() => {
           <div class="text-4xl font-black text-emerald-500 dark:text-emerald-400">{{ statsKanban.persentase }}%</div>
         </div>
         <div class="relative w-full h-8 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden shadow-inner transition-colors">
+          <!-- bg-linear-to-r diubah menjadi bg-gradient-to-r -->
           <div class="absolute top-0 left-0 h-full bg-linear-to-r from-emerald-400 to-emerald-600 transition-all duration-1000 ease-out flex items-center justify-end pr-4" :style="{ width: `${statsKanban.persentase}%` }">
             <div class="absolute inset-0 bg-white/20 w-full h-full" style="background-image: linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent); background-size: 1rem 1rem;"></div>
           </div>
@@ -312,8 +319,9 @@ const selfRewards = computed(() => {
       </div>
     </div>
 
-    <div v-if="showPerayaan" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
-      <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showPerayaan = false"></div>
+    <!-- Perbaikan Z-Index menjadi z-[100] -->
+    <div v-if="showPerayaan" class="fixed inset-0 z-100 flex items-center justify-center overflow-hidden">
+      <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="showPerayaan = false"></div>
       
       <div class="absolute inset-0 pointer-events-none">
         <div v-for="konfeti in kepinganConfetti" :key="konfeti.id" class="confetti-piece" :style="{ left: konfeti.left, backgroundColor: konfeti.bg, animationDelay: konfeti.delay, animationDuration: konfeti.durasi, transform: `rotate(${konfeti.rotasiAwal})` }"></div>
@@ -370,8 +378,11 @@ const selfRewards = computed(() => {
   from { transform: translateX(-50%) rotate(0deg); }
   to { transform: translateX(-50%) rotate(360deg); }
 }
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* Perbaikan agar CSS mendeteksi class .dark yang ada di html/body walau memakai scoped style */
+:global(.dark) ::-webkit-scrollbar-thumb { background: #475569; }
 </style>

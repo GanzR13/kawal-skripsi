@@ -20,8 +20,8 @@ const menus = [
   <aside class="w-64 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col h-full transition-all duration-300 shadow-2xl md:shadow-none border-r border-slate-800">
     
     <div class="h-16 md:h-20 flex items-center px-6 md:px-8 border-b border-slate-800">
-      <div class="w-8 h-8 rounded bg-emerald-500 mr-3 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-        <span class="text-white font-bold text-xl">K</span>
+      <div class="w-8 h-8 rounded bg-emerald-50 mr-3 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+        <img src="/logo.png" alt="Logo" class="w-full h-full object-contain">
       </div>
       <h1 class="text-xl font-bold text-white tracking-wide">Kawal<span class="text-emerald-400">Skripsi</span></h1>
     </div>

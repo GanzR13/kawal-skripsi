@@ -3,14 +3,12 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   BookOpenCheck, CalendarDays, Clock, MapPin, Video,
   Plus, Trash2, CalendarPlus, StickyNote, CalendarClock,
-  Calendar, PenLine, CheckCircle2, CircleDashed, Gift
+  Calendar, PenLine, CheckCircle2, CircleDashed, Gift, ChevronDown
 } from 'lucide-vue-next'
-
 
 const jadwal = ref([])
 const isFormJadwalBuka = ref(false)
 const formJadwal = ref({ topik: '', tanggal: '', waktu: '', tipe: 'Tatap Muka', lokasi: '', status: 'pending' })
-
 
 const catatan = ref([])
 const judulCatatan = ref('')
@@ -18,14 +16,18 @@ const isiCatatan = ref('')
 const rewardCatatan = ref('') 
 const tabCatatan = ref('revisi')
 
-
 const dataKanban = ref([])
+
+// State untuk custom dropdown
+const isDropdownTipeBuka = ref(false)
+
+// State untuk custom alert konfirmasi hapus
+const deleteModal = ref({ show: false, tipe: '', id: null, title: '', desc: '' })
 
 const muatKanban = () => {
   const kanbanLokal = localStorage.getItem('kawalSkripsi_kanban')
   if (kanbanLokal) dataKanban.value = JSON.parse(kanbanLokal)
 }
-
 
 onMounted(() => {
   const dataJadwal = localStorage.getItem('kawalSkripsi_jadwal')
@@ -52,6 +54,21 @@ watch(catatan, (val) => {
   window.dispatchEvent(new CustomEvent('kawalSkripsi_update'))
 }, { deep: true })
 
+// FUNGSI UNTUK MEMBUKA NATIVE PICKER SAAT INPUT DIKLIK
+const bukaPicker = (e) => {
+  try {
+    if (e.target && typeof e.target.showPicker === 'function') {
+      e.target.showPicker()
+    }
+  } catch (error) {
+    // Abaikan jika browser lama tidak mendukung showPicker()
+  }
+}
+
+const pilihTipeJadwal = (tipe) => {
+  formJadwal.value.tipe = tipe
+  isDropdownTipeBuka.value = false
+}
 
 const tambahJadwal = () => {
   if (!formJadwal.value.topik || !formJadwal.value.tanggal) return
@@ -62,14 +79,8 @@ const tambahJadwal = () => {
 }
 
 const ubahStatusJadwal = (id, statusBaru) => {
-  if (statusBaru === 'hapus') {
-    if (confirm('Yakin ingin menghapus jadwal ini?')) {
-      jadwal.value = jadwal.value.filter(j => j.id !== id)
-    }
-  } else {
-    const item = jadwal.value.find(j => j.id === id)
-    if (item) item.status = statusBaru
-  }
+  const item = jadwal.value.find(j => j.id === id)
+  if (item) item.status = statusBaru
 }
 
 const tambahKeGCal = (item) => {
@@ -87,11 +98,9 @@ const tambahKeGCal = (item) => {
   window.open(url, '_blank');
 }
 
-
 const tambahCatatan = () => {
   if (!judulCatatan.value.trim() || !isiCatatan.value.trim()) return
   
- 
   catatan.value.unshift({
     id: Date.now(),
     judul: judulCatatan.value,
@@ -117,13 +126,10 @@ const tambahCatatan = () => {
     muatKanban() 
   }
 
-
   judulCatatan.value = ''; 
   isiCatatan.value = '';
   rewardCatatan.value = '';
 }
-
-const hapusCatatan = (id) => catatan.value = catatan.value.filter(c => c.id !== id)
 
 const catatanTampil = computed(() => {
   return catatan.value.filter(c => {
@@ -140,6 +146,66 @@ const isCatatanSelesai = (item) => {
 }
 
 const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+
+// ================= FUNGSI ZONA WAKTU OTOMATIS =================
+const zonaWaktuLokal = computed(() => {
+  const offset = new Date().getTimezoneOffset();
+  
+  // Mapping offset menit ke zona waktu Indonesia
+  if (offset === -420) return 'WIB';  // UTC+7
+  if (offset === -480) return 'WITA'; // UTC+8
+  if (offset === -540) return 'WIT';  // UTC+9
+  
+  // Fallback jika diakses dari luar zona waktu Indonesia
+  try {
+    const waktuString = new Date().toLocaleTimeString('id-ID', { timeZoneName: 'short' });
+    const parts = waktuString.split(' ');
+    return parts.length > 1 ? parts[parts.length - 1] : 'WIB';
+  } catch (error) {
+    return 'WIB'; // Default aman
+  }
+});
+// ==============================================================
+
+// ================= FUNGSI MODAL HAPUS =================
+const bukaModalHapusJadwal = (id) => {
+  deleteModal.value = {
+    show: true,
+    tipe: 'jadwal',
+    id: id,
+    title: 'Hapus Agenda?',
+    desc: 'Agenda bimbingan yang dihapus tidak dapat dikembalikan. Yakin ingin menghapusnya?'
+  }
+}
+
+const bukaModalHapusCatatan = (id) => {
+  deleteModal.value = {
+    show: true,
+    tipe: 'catatan',
+    id: id,
+    title: 'Hapus Catatan?',
+    desc: 'Catatan ini akan dihapus secara permanen. Yakin ingin melanjutkannya?'
+  }
+}
+
+const konfirmasiHapus = () => {
+  if (deleteModal.value.tipe === 'jadwal') {
+    jadwal.value = jadwal.value.filter(j => j.id !== deleteModal.value.id)
+  } else if (deleteModal.value.tipe === 'catatan') {
+    catatan.value = catatan.value.filter(c => c.id !== deleteModal.value.id)
+  }
+  batalHapus()
+}
+
+const batalHapus = () => {
+  deleteModal.value.show = false
+  setTimeout(() => {
+    deleteModal.value.id = null
+    deleteModal.value.tipe = ''
+  }, 300)
+}
+// ======================================================
+
 </script>
 
 <template>
@@ -166,13 +232,72 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
       <div v-show="isFormJadwalBuka" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-emerald-200 dark:border-emerald-500/30 mb-6 animate-in fade-in slide-in-from-top-4 transition-colors duration-300">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input v-model="formJadwal.topik" type="text" placeholder="Topik (misal: Cek Bab 4)" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none md:col-span-2 transition-colors" />
-          <input v-model="formJadwal.tanggal" type="date" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors" />
-          <input v-model="formJadwal.waktu" type="time" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors" />
-          <select v-model="formJadwal.tipe" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors">
-            <option value="Tatap Muka">Tatap Muka</option>
-            <option value="Online">Online</option>
-          </select>
+          
+          <!-- CUSTOM INPUT TANGGAL -->
+          <div class="relative group">
+            <div class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl transition-colors group-focus-within:ring-2 group-focus-within:ring-emerald-500 group-hover:border-emerald-300 dark:group-hover:border-emerald-600">
+              <span class="flex items-center text-sm font-medium" :class="formJadwal.tanggal ? '' : 'text-slate-400 dark:text-slate-500'">
+                <CalendarDays class="w-4 h-4 mr-2 opacity-70" />
+                {{ formJadwal.tanggal || 'Pilih Tanggal' }}
+              </span>
+            </div>
+            <!-- Fungsi bukaPicker dikembalikan ke sini -->
+            <input v-model="formJadwal.tanggal" type="date" @click="bukaPicker" @focus="bukaPicker" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer dark:scheme-dark z-10" />
+          </div>
+          
+          <!-- CUSTOM INPUT WAKTU -->
+          <div class="relative group">
+            <div class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl transition-colors group-focus-within:ring-2 group-focus-within:ring-emerald-500 group-hover:border-emerald-300 dark:group-hover:border-emerald-600">
+              <span class="flex items-center text-sm font-medium" :class="formJadwal.waktu ? '' : 'text-slate-400 dark:text-slate-500'">
+                <Clock class="w-4 h-4 mr-2 opacity-70" />
+                {{ formJadwal.waktu ? formJadwal.waktu + ' ' + zonaWaktuLokal : 'Pilih Waktu' }}
+              </span>
+            </div>
+            <!-- Fungsi bukaPicker dikembalikan ke sini -->
+            <input v-model="formJadwal.waktu" type="time" @click="bukaPicker" @focus="bukaPicker" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer dark:scheme-dark z-10" />
+          </div>
+          
+          <!-- CUSTOM DROPDOWN TIPE JADWAL -->
+          <div class="relative z-20">
+            <!-- Invisible overlay untuk menutup dropdown saat klik di luar area -->
+            <div v-if="isDropdownTipeBuka" @click="isDropdownTipeBuka = false" class="fixed inset-0 z-10"></div>
+            
+            <div class="relative z-20 h-full">
+              <button 
+                type="button" 
+                @click="isDropdownTipeBuka = !isDropdownTipeBuka" 
+                class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+              >
+                <span class="font-medium">{{ formJadwal.tipe }}</span>
+                <ChevronDown class="w-4 h-4 text-slate-400 transition-transform duration-300" :class="{ 'rotate-180': isDropdownTipeBuka }" />
+              </button>
+
+              <transition name="fade">
+                <div v-if="isDropdownTipeBuka" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-30">
+                  <button
+                    type="button"
+                    @click="pilihTipeJadwal('Tatap Muka')"
+                    class="w-full flex items-center px-4 py-2.5 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    :class="formJadwal.tipe === 'Tatap Muka' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                  >
+                    Tatap Muka
+                  </button>
+                  <button
+                    type="button"
+                    @click="pilihTipeJadwal('Online')"
+                    class="w-full flex items-center px-4 py-2.5 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    :class="formJadwal.tipe === 'Online' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                  >
+                    Online
+                  </button>
+                </div>
+              </transition>
+            </div>
+          </div>
+          <!-- END CUSTOM DROPDOWN -->
+
           <input v-model="formJadwal.lokasi" type="text" placeholder="Lokasi/Link" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors" />
+          
           <div class="md:col-span-2 flex justify-end mt-2">
             <button @click="tambahJadwal" class="px-6 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl hover:bg-slate-800 dark:hover:bg-white transition-all">
               Simpan Jadwal
@@ -204,7 +329,7 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
             <h3 class="font-bold text-slate-800 dark:text-white mb-2 truncate transition-colors" :class="(item.status || 'pending') === 'selesai' ? 'line-through decoration-slate-400' : ''">{{ item.topik }}</h3>
             
             <div class="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 font-medium transition-colors">
-              <div class="flex items-center"><Clock class="w-3.5 h-3.5 mr-1.5" />{{ item.waktu }} WIB</div>
+              <div class="flex items-center"><Clock class="w-3.5 h-3.5 mr-1.5" />{{ item.waktu }} {{ zonaWaktuLokal }}</div>
               <div class="flex items-center">
                 <component :is="item.tipe === 'Online' ? Video : MapPin" class="w-3.5 h-3.5 mr-1.5" />
                 <span class="truncate">{{ item.lokasi }}</span>
@@ -213,7 +338,7 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
 
             <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between gap-2 items-center transition-colors">
               <button @click="tambahKeGCal(item)" class="flex items-center text-xs font-medium text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-500/10 px-2 py-1.5 rounded transition-colors" title="Google Calendar">
-                <Calendar class="w-3.5 h-3.5 mr-1" /> GCal
+                <Calendar class="w-3.5 h-3.5 mr-1" /> Google Calendar
               </button>
               
               <div class="flex gap-1.5">
@@ -223,7 +348,7 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
                 <button v-if="(item.status || 'pending') === 'selesai'" @click="ubahStatusJadwal(item.id, 'pending')" class="p-1.5 text-emerald-500 dark:text-emerald-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded transition-colors" title="Batalkan / Tandai Pending">
                   <CircleDashed class="w-4 h-4" />
                 </button>
-                <button @click="ubahStatusJadwal(item.id, 'hapus')" class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Hapus">
+                <button type="button" @click="bukaModalHapusJadwal(item.id)" class="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Hapus">
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
@@ -256,7 +381,7 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
           <textarea v-model="isiCatatan" rows="2" :placeholder="tabCatatan === 'revisi' ? 'Detail masukan dari dosen...' : 'Tuliskan idemu di sini...'" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl outline-none resize-none transition-colors" :class="tabCatatan === 'revisi' ? 'focus:ring-2 focus:ring-emerald-500' : 'focus:ring-2 focus:ring-blue-500'"></textarea>
           
           <div v-if="tabCatatan === 'revisi'" class="flex items-center gap-3">
-            <Gift class="w-5 h-5 text-rose-400 flex-shrink-0" />
+            <Gift class="w-5 h-5 text-rose-400 shrink-0" />
             <input v-model="rewardCatatan" type="text" placeholder="Self Reward jika tuntas (misal: Beli Kopi / Main Game 2 Jam)" class="w-full px-4 py-2 bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/50 text-slate-800 dark:text-white placeholder-rose-400/70 rounded-xl outline-none focus:ring-2 focus:ring-rose-400 transition-colors" />
           </div>
             
@@ -269,7 +394,7 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
       </div>
 
       <div v-if="catatanTampil.length === 0" class="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-medium transition-colors duration-300">
-        {{ tabCatatan === 'revisi' ? 'Skripsimu aman! Belum ada catatan revisi.' : 'Belum ada catatan biasa yang ditambahkan.' }}
+        {{ tabCatatan === 'revisi' ? 'Skripsimu aman! Belum ada catatan revisi' : 'Belum ada catatan' }}
       </div>
       
       <TransitionGroup v-else name="list" tag="div" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -294,13 +419,35 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
             <span class="text-xs text-slate-400 dark:text-slate-500 flex items-center">
               <CalendarClock class="w-3 h-3 mr-1" />{{ item.tanggal }}
             </span>
-            <button @click="hapusCatatan(item.id)" class="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10">
+            <button type="button" @click="bukaModalHapusCatatan(item.id)" class="text-slate-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-500/10">
               <Trash2 class="w-4 h-4" />
             </button>
           </div>
         </div>
       </TransitionGroup>
     </section>
+
+    <!-- Modal Custom Alert Konfirmasi Hapus -->
+    <transition name="fade">
+      <div v-if="deleteModal.show" class="fixed inset-0 z-60 flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="batalHapus"></div>
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm p-6 rounded-3xl shadow-2xl relative z-10 transition-colors duration-300 animate-in zoom-in-95 text-center border border-slate-200 dark:border-slate-700">
+          <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-5 text-red-500 border border-red-100 dark:border-red-500/20 shadow-inner">
+            <Trash2 class="w-8 h-8" />
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">{{ deleteModal.title }}</h2>
+          <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">{{ deleteModal.desc }}</p>
+          <div class="flex gap-3">
+            <button @click="batalHapus" class="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-colors">
+              Batal
+            </button>
+            <button @click="konfirmasiHapus" class="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.23)] hover:-translate-y-0.5">
+              Ya, Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
   </div>
 </template>
@@ -310,4 +457,8 @@ const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 
 .list-enter-from, .list-leave-to { opacity: 0; transform: translateY(20px) scale(0.95); }
 .overflow-x-auto::-webkit-scrollbar { display: none; }
 .overflow-x-auto { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Animasi untuk Modal Hapus (menyamakan dengan gaya PapanKanban) */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

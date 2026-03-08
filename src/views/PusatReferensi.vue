@@ -1,23 +1,25 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { LibraryBig, Plus, Trash2, ExternalLink, Search, BookText, Code2, Globe } from 'lucide-vue-next'
-
+import { LibraryBig, Plus, Trash2, ExternalLink, Search, BookText, Code2, Globe, ChevronDown } from 'lucide-vue-next'
 
 const referensi = ref([])
 const kataKunci = ref('')
 const kategoriAktif = ref('Semua')
 
-
 const isFormBuka = ref(false)
 const form = ref({ judul: '', url: '', kategori: 'Jurnal' })
 
+// State untuk custom dropdown
+const isDropdownBuka = ref(false)
+
+// State untuk custom alert konfirmasi hapus
+const deleteModal = ref({ show: false, id: null })
 
 const KATEGORI = [
   { nama: 'Jurnal', ikon: BookText, warna: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' },
   { nama: 'Repositori', ikon: Code2, warna: 'bg-slate-800 dark:bg-slate-700 text-white border-slate-700 dark:border-slate-600' },
   { nama: 'Artikel', ikon: Globe, warna: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' }
 ]
-
 
 onMounted(() => {
   const dataLokal = localStorage.getItem('kawalSkripsi_referensi')
@@ -31,7 +33,6 @@ onMounted(() => {
     ]
   }
 })
-
 
 watch(referensi, (nilaiBaru) => {
   localStorage.setItem('kawalSkripsi_referensi', JSON.stringify(nilaiBaru))
@@ -56,10 +57,30 @@ const tambahReferensi = () => {
   isFormBuka.value = false
 }
 
-const hapusReferensi = (id) => {
-  referensi.value = referensi.value.filter(item => item.id !== id)
+const pilihKategoriForm = (nama) => {
+  form.value.kategori = nama
+  isDropdownBuka.value = false
 }
 
+// ================= FUNGSI MODAL HAPUS =================
+const hapusReferensi = (id) => {
+  deleteModal.value = { show: true, id: id }
+}
+
+const konfirmasiHapus = () => {
+  if (deleteModal.value.id !== null) {
+    referensi.value = referensi.value.filter(item => item.id !== deleteModal.value.id)
+  }
+  batalHapus()
+}
+
+const batalHapus = () => {
+  deleteModal.value.show = false
+  setTimeout(() => {
+    deleteModal.value.id = null
+  }, 300)
+}
+// ======================================================
 
 const referensiTampil = computed(() => {
   return referensi.value.filter(item => {
@@ -128,20 +149,53 @@ const getKategoriStyle = (namaKategori) => {
     </div>
 
     <div v-show="isFormBuka" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-emerald-200 dark:border-emerald-500/30 animate-in fade-in slide-in-from-top-4 duration-300 transition-colors">
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 relative">
         <div class="md:col-span-5">
           <input v-model="form.judul" type="text" placeholder="Judul Referensi" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors" />
         </div>
         <div class="md:col-span-4">
           <input v-model="form.url" type="text" placeholder="https://..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors" />
         </div>
-        <div class="md:col-span-2">
-          <select v-model="form.kategori" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors">
-            <option v-for="kat in KATEGORI" :key="kat.nama" :value="kat.nama">{{ kat.nama }}</option>
-          </select>
+        
+        <!-- CUSTOM DROPDOWN -->
+        <div class="md:col-span-2 relative">
+          <!-- Invisible overlay untuk menutup dropdown saat klik di luar area -->
+          <div v-if="isDropdownBuka" @click="isDropdownBuka = false" class="fixed inset-0 z-10"></div>
+          
+          <div class="relative z-20 h-full">
+            <button 
+              type="button" 
+              @click="isDropdownBuka = !isDropdownBuka" 
+              class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors"
+            >
+              <span class="flex items-center font-medium">
+                <component :is="getKategoriStyle(form.kategori).ikon" class="w-4 h-4 mr-2 opacity-70" />
+                {{ form.kategori }}
+              </span>
+              <ChevronDown class="w-4 h-4 text-slate-400 transition-transform duration-300" :class="{ 'rotate-180': isDropdownBuka }" />
+            </button>
+
+            <transition name="fade">
+              <div v-if="isDropdownBuka" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden py-1 z-30">
+                <button
+                  v-for="kat in KATEGORI"
+                  :key="kat.nama"
+                  type="button"
+                  @click="pilihKategoriForm(kat.nama)"
+                  class="w-full flex items-center px-4 py-2.5 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                  :class="form.kategori === kat.nama ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-slate-700 dark:text-slate-300'"
+                >
+                  <component :is="kat.ikon" class="w-4 h-4 mr-2" :class="form.kategori === kat.nama ? 'opacity-100' : 'opacity-60'" />
+                  {{ kat.nama }}
+                </button>
+              </div>
+            </transition>
+          </div>
         </div>
+        <!-- END CUSTOM DROPDOWN -->
+
         <div class="md:col-span-1">
-          <button @click="tambahReferensi" class="w-full h-full flex items-center justify-center bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl hover:bg-slate-800 dark:hover:bg-white transition-all">
+          <button @click="tambahReferensi" class="w-full h-full min-h-11 flex items-center justify-center bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl hover:bg-slate-800 dark:hover:bg-white transition-all">
             Simpan
           </button>
         </div>
@@ -169,7 +223,7 @@ const getKategoriStyle = (namaKategori) => {
         </div>
 
         <div class="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700 p-3 flex justify-between items-center transition-colors">
-          <button @click="hapusReferensi(item.id)" class="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus">
+          <button type="button" @click="hapusReferensi(item.id)" class="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus">
             <Trash2 class="w-4 h-4" />
           </button>
           
@@ -180,6 +234,28 @@ const getKategoriStyle = (namaKategori) => {
         </div>
       </div>
     </TransitionGroup>
+
+    <!-- Modal Custom Alert Konfirmasi Hapus -->
+    <transition name="fade">
+      <div v-if="deleteModal.show" class="fixed inset-0 z-60 flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="batalHapus"></div>
+        <div class="bg-white dark:bg-slate-800 w-full max-w-sm p-6 rounded-3xl shadow-2xl relative z-10 transition-colors duration-300 animate-in zoom-in-95 text-center border border-slate-200 dark:border-slate-700">
+          <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mx-auto mb-5 text-red-500 border border-red-100 dark:border-red-500/20 shadow-inner">
+            <Trash2 class="w-8 h-8" />
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 dark:text-white mb-2">Hapus Referensi?</h2>
+          <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">Tautan referensi ini akan dihapus dari daftarmu. Yakin ingin menghapusnya?</p>
+          <div class="flex gap-3">
+            <button type="button" @click="batalHapus" class="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold rounded-xl transition-colors">
+              Batal
+            </button>
+            <button type="button" @click="konfirmasiHapus" class="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] hover:shadow-[0_6px_20px_rgba(239,68,68,0.23)] hover:-translate-y-0.5">
+              Ya, Hapus
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
   </div>
 </template>
@@ -198,4 +274,8 @@ const getKategoriStyle = (namaKategori) => {
 .grid-leave-active {
   position: absolute; 
 }
+
+/* Animasi untuk Modal & Dropdown */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>
