@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, Sun, Moon, GraduationCap, Sparkles } from 'lucide-vue-next'
 import Sidebar from '@/components/Sidebar.vue'
-import LandingPage from '@/views/LandingPage.vue'
+import LandingPage from 'src/views/Landingpage.vue'
 
 
 import { isDark, initTheme, toggleTheme } from '@/composables/useTheme.js'

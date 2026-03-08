@@ -18,10 +18,10 @@ const tabCatatan = ref('revisi')
 
 const dataKanban = ref([])
 
-// State untuk custom dropdown
+
 const isDropdownTipeBuka = ref(false)
 
-// State untuk custom alert konfirmasi hapus
+
 const deleteModal = ref({ show: false, tipe: '', id: null, title: '', desc: '' })
 
 const muatKanban = () => {
@@ -54,14 +54,14 @@ watch(catatan, (val) => {
   window.dispatchEvent(new CustomEvent('kawalSkripsi_update'))
 }, { deep: true })
 
-// FUNGSI UNTUK MEMBUKA NATIVE PICKER SAAT INPUT DIKLIK
+
 const bukaPicker = (e) => {
   try {
     if (e.target && typeof e.target.showPicker === 'function') {
       e.target.showPicker()
     }
   } catch (error) {
-    // Abaikan jika browser lama tidak mendukung showPicker()
+ 
   }
 }
 
@@ -147,27 +147,25 @@ const isCatatanSelesai = (item) => {
 
 const formatTanggal = (tgl) => new Date(tgl).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
-// ================= FUNGSI ZONA WAKTU OTOMATIS =================
+
 const zonaWaktuLokal = computed(() => {
   const offset = new Date().getTimezoneOffset();
   
-  // Mapping offset menit ke zona waktu Indonesia
-  if (offset === -420) return 'WIB';  // UTC+7
-  if (offset === -480) return 'WITA'; // UTC+8
-  if (offset === -540) return 'WIT';  // UTC+9
+
+  if (offset === -420) return 'WIB';  
+  if (offset === -480) return 'WITA'; 
+  if (offset === -540) return 'WIT';  
   
-  // Fallback jika diakses dari luar zona waktu Indonesia
+
   try {
     const waktuString = new Date().toLocaleTimeString('id-ID', { timeZoneName: 'short' });
     const parts = waktuString.split(' ');
     return parts.length > 1 ? parts[parts.length - 1] : 'WIB';
   } catch (error) {
-    return 'WIB'; // Default aman
+    return 'WIB'; 
   }
 });
-// ==============================================================
 
-// ================= FUNGSI MODAL HAPUS =================
 const bukaModalHapusJadwal = (id) => {
   deleteModal.value = {
     show: true,
@@ -204,7 +202,7 @@ const batalHapus = () => {
     deleteModal.value.tipe = ''
   }, 300)
 }
-// ======================================================
+
 
 </script>
 
@@ -233,7 +231,7 @@ const batalHapus = () => {
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input v-model="formJadwal.topik" type="text" placeholder="Topik (misal: Cek Bab 4)" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none md:col-span-2 transition-colors" />
           
-          <!-- CUSTOM INPUT TANGGAL -->
+        
           <div class="relative group">
             <div class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl transition-colors group-focus-within:ring-2 group-focus-within:ring-emerald-500 group-hover:border-emerald-300 dark:group-hover:border-emerald-600">
               <span class="flex items-center text-sm font-medium" :class="formJadwal.tanggal ? '' : 'text-slate-400 dark:text-slate-500'">
@@ -241,11 +239,11 @@ const batalHapus = () => {
                 {{ formJadwal.tanggal || 'Pilih Tanggal' }}
               </span>
             </div>
-            <!-- Fungsi bukaPicker dikembalikan ke sini -->
+          
             <input v-model="formJadwal.tanggal" type="date" @click="bukaPicker" @focus="bukaPicker" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer dark:scheme-dark z-10" />
           </div>
           
-          <!-- CUSTOM INPUT WAKTU -->
+       
           <div class="relative group">
             <div class="w-full h-full flex items-center justify-between px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl transition-colors group-focus-within:ring-2 group-focus-within:ring-emerald-500 group-hover:border-emerald-300 dark:group-hover:border-emerald-600">
               <span class="flex items-center text-sm font-medium" :class="formJadwal.waktu ? '' : 'text-slate-400 dark:text-slate-500'">
@@ -253,13 +251,13 @@ const batalHapus = () => {
                 {{ formJadwal.waktu ? formJadwal.waktu + ' ' + zonaWaktuLokal : 'Pilih Waktu' }}
               </span>
             </div>
-            <!-- Fungsi bukaPicker dikembalikan ke sini -->
+      
             <input v-model="formJadwal.waktu" type="time" @click="bukaPicker" @focus="bukaPicker" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer dark:scheme-dark z-10" />
           </div>
           
-          <!-- CUSTOM DROPDOWN TIPE JADWAL -->
+     
           <div class="relative z-20">
-            <!-- Invisible overlay untuk menutup dropdown saat klik di luar area -->
+        
             <div v-if="isDropdownTipeBuka" @click="isDropdownTipeBuka = false" class="fixed inset-0 z-10"></div>
             
             <div class="relative z-20 h-full">
@@ -294,7 +292,7 @@ const batalHapus = () => {
               </transition>
             </div>
           </div>
-          <!-- END CUSTOM DROPDOWN -->
+      
 
           <input v-model="formJadwal.lokasi" type="text" placeholder="Lokasi/Link" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white dark:placeholder-slate-500 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors" />
           
@@ -427,7 +425,7 @@ const batalHapus = () => {
       </TransitionGroup>
     </section>
 
-    <!-- Modal Custom Alert Konfirmasi Hapus -->
+    
     <transition name="fade">
       <div v-if="deleteModal.show" class="fixed inset-0 z-60 flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="batalHapus"></div>
@@ -458,7 +456,7 @@ const batalHapus = () => {
 .overflow-x-auto::-webkit-scrollbar { display: none; }
 .overflow-x-auto { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Animasi untuk Modal Hapus (menyamakan dengan gaya PapanKanban) */
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

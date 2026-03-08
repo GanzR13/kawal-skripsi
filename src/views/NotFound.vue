@@ -2,7 +2,7 @@
 import { FileQuestion, Home, ArrowLeft } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-// Menggunakan Vue Router untuk fungsi "Kembali ke halaman sebelumnya"
+
 const router = useRouter()
 </script>
 

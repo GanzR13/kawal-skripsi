@@ -2,7 +2,7 @@
 import { BookOpenCheck, KanbanSquare, Timer, LibraryBig, TrendingUp, Sun, Moon } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 
-// Import state tema
+
 import { isDark, toggleTheme } from '@/composables/useTheme.js'
 
 const route = useRoute()

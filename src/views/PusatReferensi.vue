@@ -9,10 +9,10 @@ const kategoriAktif = ref('Semua')
 const isFormBuka = ref(false)
 const form = ref({ judul: '', url: '', kategori: 'Jurnal' })
 
-// State untuk custom dropdown
+
 const isDropdownBuka = ref(false)
 
-// State untuk custom alert konfirmasi hapus
+
 const deleteModal = ref({ show: false, id: null })
 
 const KATEGORI = [
@@ -62,7 +62,7 @@ const pilihKategoriForm = (nama) => {
   isDropdownBuka.value = false
 }
 
-// ================= FUNGSI MODAL HAPUS =================
+
 const hapusReferensi = (id) => {
   deleteModal.value = { show: true, id: id }
 }
@@ -80,7 +80,7 @@ const batalHapus = () => {
     deleteModal.value.id = null
   }, 300)
 }
-// ======================================================
+
 
 const referensiTampil = computed(() => {
   return referensi.value.filter(item => {
@@ -157,9 +157,9 @@ const getKategoriStyle = (namaKategori) => {
           <input v-model="form.url" type="text" placeholder="https://..." class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 transition-colors" />
         </div>
         
-        <!-- CUSTOM DROPDOWN -->
+      
         <div class="md:col-span-2 relative">
-          <!-- Invisible overlay untuk menutup dropdown saat klik di luar area -->
+      
           <div v-if="isDropdownBuka" @click="isDropdownBuka = false" class="fixed inset-0 z-10"></div>
           
           <div class="relative z-20 h-full">
@@ -192,7 +192,7 @@ const getKategoriStyle = (namaKategori) => {
             </transition>
           </div>
         </div>
-        <!-- END CUSTOM DROPDOWN -->
+     
 
         <div class="md:col-span-1">
           <button @click="tambahReferensi" class="w-full h-full min-h-11 flex items-center justify-center bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-medium rounded-xl hover:bg-slate-800 dark:hover:bg-white transition-all">
@@ -235,7 +235,7 @@ const getKategoriStyle = (namaKategori) => {
       </div>
     </TransitionGroup>
 
-    <!-- Modal Custom Alert Konfirmasi Hapus -->
+   
     <transition name="fade">
       <div v-if="deleteModal.show" class="fixed inset-0 z-60 flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="batalHapus"></div>
@@ -275,7 +275,7 @@ const getKategoriStyle = (namaKategori) => {
   position: absolute; 
 }
 
-/* Animasi untuk Modal & Dropdown */
+
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

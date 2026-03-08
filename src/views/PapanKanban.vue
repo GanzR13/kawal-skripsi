@@ -12,7 +12,7 @@ const tugas = ref([])
 const isModalBuka = ref(false)
 const isEditing = ref(false)
 
-// State untuk custom alert konfirmasi hapus
+
 const isDeleteModalBuka = ref(false)
 const tugasToDelete = ref(null)
 
@@ -98,13 +98,12 @@ const simpanTugas = () => {
   isModalBuka.value = false
 }
 
-// Fungsi untuk membuka modal konfirmasi hapus
 const hapusTugas = (id) => {
   tugasToDelete.value = id
   isDeleteModalBuka.value = true
 }
 
-// Fungsi untuk mengeksekusi penghapusan
+
 const konfirmasiHapus = () => {
   if (tugasToDelete.value !== null) {
     tugas.value = tugas.value.filter(t => t.id !== tugasToDelete.value)
@@ -113,7 +112,6 @@ const konfirmasiHapus = () => {
   }
 }
 
-// Fungsi untuk membatalkan penghapusan
 const batalHapus = () => {
   isDeleteModalBuka.value = false
   tugasToDelete.value = null
@@ -142,7 +140,7 @@ const batalHapus = () => {
             <component :is="kol.ikon" class="w-5 h-5 mr-2" /> {{ kol.judul }}
           </div>
           <div class="flex items-center gap-2">
-            <!-- Tombol Tambah Card di Header Kolom -->
+          
             <button @click="bukaModalTambah(kol.id)" class="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
               <Plus class="w-4 h-4" />
             </button>
@@ -174,7 +172,7 @@ const batalHapus = () => {
             </template>
           </div>
 
-          <!-- Tombol Tambah Card Baru Bergaya Dashed di Dalam Kolom -->
+       
           <button @click="bukaModalTambah(kol.id)" class="w-full mt-auto py-3 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-medium text-sm flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 transition-all">
             <Plus class="w-4 h-4 mr-1.5" /> Tambah Tugas
           </button>
@@ -182,7 +180,7 @@ const batalHapus = () => {
       </div>
     </div>
 
-    <!-- Modal Form Tambah/Edit Tugas -->
+ 
     <transition name="fade">
       <div v-if="isModalBuka" class="fixed inset-0 z-50 flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="isModalBuka = false"></div>
@@ -206,7 +204,7 @@ const batalHapus = () => {
               <input v-model="formTugas.reward" type="text" placeholder="misal: Beli Matcha Latte" class="w-full px-4 py-2.5 bg-rose-50/50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800/50 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-rose-400 outline-none transition-colors" />
             </div>
 
-            <!-- Kondisi Pilihan Status Progres (Hanya tampil saat mode Edit) -->
+         
             <div v-if="isEditing">
               <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status Progres</label>
               <select v-model="formTugas.status" class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-colors">
@@ -225,7 +223,7 @@ const batalHapus = () => {
       </div>
     </transition>
 
-    <!-- Modal Custom Alert Konfirmasi Hapus -->
+    
     <transition name="fade">
       <div v-if="isDeleteModalBuka" class="fixed inset-0 z-60 flex items-center justify-center px-4">
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="batalHapus"></div>
