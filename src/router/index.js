@@ -40,7 +40,6 @@ const router = createRouter({
       meta: { title: 'Pusat Referensi - KawalSkripsi' }
     },
     {
-      // Wajib berada di paling bawah!
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../views/NotFound.vue'),
@@ -49,7 +48,7 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from) => {
+router.beforeEach((to) => {
   document.title = to.meta.title || 'KawalSkripsi - Produktivitas Mahasiswa'
   return true 
 })
